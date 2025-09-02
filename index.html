@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Tutorial: Jogo de Tiro ao Alvo — Godot 4.4.1</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-btn.active { background-color: #003463; color: #fff; font-weight: 600; }
+        .content-section { display: none; }
+        .content-section.active { display:block; }
+        .image-zoom-overlay {
+            position: fixed; inset:0; display:none;
+            justify-content:center; align-items:center; z-index:1000;
+            background: rgba(0,0,0,.9);
+        }
+        .image-zoom-overlay.visible { display:flex; }
+        .image-zoom-overlay img { max-width:90%; max-height:90%; border-radius:.5rem; }
+        .image-container img, .image-container video { cursor:pointer; transition: transform .15s; }
+        .image-container img:hover, .image-container video:hover { transform: scale(1.02); }
+        pre.code { background:#0f1724; color:#e6eef8; padding:1rem; border-radius:.5rem; overflow:auto; }
+        .note { background:#fff7c2; padding:.6rem; border-left:4px solid #f59e0b; border-radius:.375rem; }
+        .small { font-size:.9rem; color:#475569; }
+
+        .code-block {
+            position: relative;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background-color: #003463;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .copy-btn:hover {
+            background-color: #014c8d;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+
+    <div class="w-full h-[60px] relative bg-[#003463]">
+        <div class="absolute inset-0 flex items-center justify-center container mx-auto px-4">
+            <div class="header-logo-container">
+                <img src="logo.png" alt="Logo SENAI" style="max-height:50px;">
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-sky-800">Tutorial: Jogo de Tiro ao Alvo (Godot 4.4.1)</h1>
+            <p class="mt-2 text-lg text-stone-600">Guia passo a passo.</p>
+        </header>
+
+        <nav id="tab-navigation" class="flex flex-wrap justify-center gap-2 sm:gap-4 mb-6">
+            <button data-tab="1" class="tab-btn active px-4 py-2 rounded-md bg-white shadow-sm hover:bg-stone-200 transition-colors">1. Configurações</button>
+            <button data-tab="2" class="tab-btn px-4 py-2 rounded-md bg-white shadow-sm hover:bg-stone-200 transition-colors">2. Objetos (Alvo & Tiro)</button>
+            <button data-tab="3" class="tab-btn px-4 py-2 rounded-md bg-white shadow-sm hover:bg-stone-200 transition-colors">3. Player</button>
+            <button data-tab="4" class="tab-btn px-4 py-2 rounded-md bg-white shadow-sm hover:bg-stone-200 transition-colors">4. Lógica & Colisões</button>
+            <button data-tab="5" class="tab-btn px-4 py-2 rounded-md bg-white shadow-sm hover:bg-stone-200 transition-colors">5. Exportação & Dicas</button>
+        </nav>
+
+        <main id="content-container" class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+            
+            <section id="tab-content-1" class="content-section active">
+                <div class="prose max-w-none">
+                    <h2 class="text-2xl font-semibold text-sky-700 mb-4">Passo 1 — Configurações Iniciais</h2>
+                    <p class="mb-4">Antes de criar cenas e scripts, vamos garantir que o projeto esteja com as configurações corretas.</p>
+
+                    <h3 class="text-xl font-medium mb-2">a) Janela / Resolução</h3>
+                    <ul class="list-disc list-inside small">
+                        <li>Acesse <strong>Projeto > Configurações do Projeto > Janela</strong>.</li>
+                        <li>Em <strong>Tamanho</strong>, defina: <code>Viewport Largura = 1152</code> e <code>Viewport Altura = 648</code>. Essa resolução facilita cálculos e testes.</li>
+                    </ul>
+                    <div class="image-container">
+                        <video src="passo1a.mp4" controls class="rounded-lg shadow-md my-4 w-full"></video>
+                    </div>
+
+                    <h3 class="text-xl font-medium mb-2">b) Mapear entradas (Input Map)</h3>
+                    <p class="small mb-2">Abra <strong>Projeto > Mapa de Ações</strong> e crie estas ações:</p>
+                    <ul class="list-disc list-inside small">
+                        <li>
+            <strong>Ação: `mover_cima`</strong>
+            <ul class="list-disc list-inside ml-6 space-y-1">
+                <li>Vá para a aba <strong>Mapa de Ações</strong>.</li>
+                <li>Na barra "Adicionar Ação", digite `mover_cima` e clique em <strong>Adicionar</strong>.</li>
+                <li>Clique no ícone de <strong>+</strong> ao lado do nome da ação.</li>
+                <li>Pressione a tecla `W` (ou a `Seta para Cima`) e clique em <strong>OK</strong>.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>Ação: `mover_baixo`</strong>
+            <ul class="list-disc list-inside ml-6 space-y-1">
+                <li>Na barra "Adicionar Ação", digite `mover_baixo` e clique em <strong>Adicionar</strong>.</li>
+                <li>Clique no ícone de <strong>+</strong> ao lado da ação.</li>
+                <li>Pressione a tecla `S` (ou a `Seta para Baixo`) e clique em <strong>OK</strong>.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>Ação: `mover_esquerda`</strong>
+            <ul class="list-disc list-inside ml-6 space-y-1">
+                <li>Na barra "Adicionar Ação", digite `mover_esquerda` e clique em <strong>Adicionar</strong>.</li>
+                <li>Clique no ícone de <strong>+</strong> ao lado da ação.</li>
+                <li>Pressione a tecla `A` (ou a `Seta para Esquerda`) e clique em <strong>OK</strong>.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>Ação: `mover_direita`</strong>
+            <ul class="list-disc list-inside ml-6 space-y-1">
+                <li>Na barra "Adicionar Ação", digite `mover_direita` e clique em <strong>Adicionar</strong>.</li>
+                <li>Clique no ícone de <strong>+</strong> ao lado da ação.</li>
+                <li>Pressione a tecla `D` (ou a `Seta para Direita`) e clique em <strong>OK</strong>.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>Ação: `shoot`</strong>
+            <ul class="list-disc list-inside ml-6 space-y-1">
+                <li>Na barra "Adicionar Ação", digite `shoot` e clique em <strong>Adicionar</strong>.</li>
+                <li>Clique no ícone de <strong>+</strong> ao lado da ação.</li>
+                <li>Pressione a tecla `Espaço` (ou clique com o `Botão esquerdo do mouse`) e clique em <strong>OK</strong>.</li>
+            </ul>
+        </li>
+                    </ul>
+                    <div class="image-container">
+                        <video src="passo1b.mp4" controls class="rounded-lg shadow-md my-4 w-full"></video>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-content-2" class="content-section">
+                <div class="prose max-w-none">
+                    <h2 class="text-2xl font-semibold text-sky-700 mb-4">Passo 2 — Objetos: Alvo (Target) e Tiro (Bullet)</h2>
+                    <p class="mb-3">Vamos criar duas cenas simples: <strong>Target</strong> (Area2D com ColorRect vermelho) e <strong>Bullet</strong> (Area2D com ColorRect branco).</p>
+
+                    <h3 class="text-xl font-medium mb-2">a) Cena Target</h3>
+                    <ol class="list-decimal list-inside small">
+                        <li>Criar nova cena 2D → nó raiz: <strong>Area2D</strong>. Renomeie para <strong>Target</strong>.</li>
+                        <li>Filhos:
+                            <ul class="list-disc list-inside ml-6">
+                                <li><strong>ColorRect</strong> (cor vermelha) — visual do alvo.</li>
+                                <li><strong>CollisionShape2D</strong> — ajustar para cobrir o ColorRect (RectangleShape2D).</li>
+                            </ul>
+                        </li>
+                        <li>No painel Nó, adicione o grupo <code>targets</code>.</li>
+                        <li>Salve como <code>Target.tscn</code> e anexe o script <code>Target.gd</code> (abaixo).</li>
+                    </ol>
+                    <h4 class="text-lg font-medium mt-4 mb-2">Código do Target</h4>
+                    <p class="small">Este script move o alvo para baixo e detecta quando ele é atingido por um tiro.</p>
+                    <div class="code-block">
+                        <button class="copy-btn">Copiar</button>
+                        <pre class="code"><code># Target.gd
+extends Area2D
+
+# Sinal para avisar o Main que este alvo foi atingido
+signal hit
+
+var speed: float = 120.0
+
+func _physics_process(delta: float) -> void:
+    # Move o alvo para baixo (entra pela parte superior da tela)
+    global_position.y += speed * delta
+
+func _on_area_entered(area: Area2D) -> void:
+    # Se a área que entrou for do grupo bullets, emite sinal e se remove
+    if area.is_in_group("bullets"):
+        emit_signal("hit")
+        queue_free()
+</code></pre>
+                    </div>
+                    <p class="note small mt-4"><strong>Importante:</strong> Para que este código funcione, você precisa **conectar o sinal `area_entered`** do nó `Area2D` do alvo ao método `_on_area_entered` no editor(script).</p>
+                    <div class="image-container">
+                        <video src="passo2b.mp4" controls class="rounded-lg shadow-md my-4 w-full"></video>
+                    </div>
+
+                    <h3 class="text-xl font-medium mb-2 mt-8">b) Cena Bullet</h3>
+                    <ol class="list-decimal list-inside small">
+                        <li>Criar nova cena 2D → nó raiz: <strong>Area2D</strong>. Nomeie <strong>Bullet</strong>.</li>
+                        <li>Filhos:
+                            <ul class="list-disc list-inside ml-6">
+                                <li><strong>ColorRect</strong> (branco) — visual do tiro.</li>
+                                <li><strong>CollisionShape2D</strong> — adequar o retângulo (mais estreito que o alvo).</li>
+                                <li><strong>VisibleOnScreenEnabler2D</strong> — para remover o tiro ao sair da tela.</li>
+                            </ul>
+                        </li>
+                        <li>No painel Nó, adicione o grupo <code>bullets</code>.</li>
+                        <li>Salve como <code>Bullet.tscn</code> e anexe o script <code>Bullet.gd</code> (abaixo).</li>
+                    </ol>
+                    <h4 class="text-lg font-medium mt-4 mb-2">Código do Bullet</h4>
+                    <p class="small">Este script controla o movimento do tiro para cima e o remove ao atingir um alvo.</p>
+                    <div class="code-block">
+                        <button class="copy-btn">Copiar</button>
+                        <pre class="code"><code># Bullet.gd
+extends Area2D
+
+var speed: float = 600.0
+
+func _physics_process(delta: float) -> void:
+    # Move o tiro para cima (y decresce)
+    global_position.y -= speed * delta
+
+func _on_area_entered(area: Area2D) -> void:
+    # Ao colidir com um alvo, se remove
+    if area.is_in_group("targets"):
+        queue_free()
+
+func _on_visible_on_screen_enabler_2d_screen_exited() -> void:
+    queue_free()
+</code></pre>
+                    </div>
+                    <p class="note small mt-4">
+                        <strong>Importante:</strong> Você precisa **conectar o sinal `area_entered`** do nó `Area2D` do tiro ao método `_on_area_entered` no editor(script).
+                        <br><br>
+                        O tiro também precisa ser removido caso não acerte o alvo e saia da tela. Para isso, **conecte o sinal `screen_exited` do nó `VisibleOnScreenEnabler2D`** ao método `_on_visible_on_screen_enabler_2d_screen_exited()`.
+                        <br><br>
+                        Ambos os métodos contêm a chamada `queue_free()` para garantir que o nó seja removido da memória, o que é uma prática essencial para manter a performance do jogo.
+                    </p>
+                    <div class="image-container">
+                        <video src="passo2b.mp4" controls class="rounded-lg shadow-md my-4 w-full"></video>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-content-3" class="content-section">
+                <div class="prose max-w-none">
+                    <h2 class="text-2xl font-semibold text-sky-700 mb-4">Passo 3 — O Jogador (Player)</h2>
+                    <p class="mb-4">Criaremos a cena do jogador que pode se mover e disparar. Usaremos um <code>ColorRect</code> para o visual (cor azul).</p>
+
+                    <h3 class="text-xl font-medium mb-2">a) Criando a cena do Player</h3>
+                    <ol class="list-decimal list-inside small">
+                        <li>Nova cena 2D → nó raiz: <strong>CharacterBody2D</strong>. Renomeie para <strong>Player</strong>.</li>
+                        <li>Filhos do Player:
+                            <ul class="list-disc list-inside ml-6">
+                                <li><strong>ColorRect</strong> (cor azul) — visual.</li>
+                                <li><strong>CollisionShape2D</strong> — escolha um <em>RectangleShape2D</em> que cubra o ColorRect.</li>
+                            </ul>
+                        </li>
+                        <li>No painel Nó, adicione o grupo <code>players</code>.</li>
+                        <li>Salve como <code>Player.tscn</code> e anexe o script <code>Player.gd</code> (abaixo).</li>
+                    </ol>
+                    <div class="image-container">
+                        <video src="passo3a.mp4" controls class="rounded-lg shadow-md my-4 w-full"></video>
+                    </div>
+
+                    <h3 class="text-xl font-medium mb-2">b) Script do Player — movimento e disparo</h3>
+                    <p class="small mb-2">Explicação rápida antes do código: usamos <code>Input.get_vector()</code> para ler as quatro ações de movimento. O disparo tem um pequeno tempo de espera (cooldown) para evitar que o jogador atire continuamente.</p>
+                    <div class="code-block">
+                        <button class="copy-btn">Copiar</button>
+                        <pre class="code"><code># Player.gd
+extends CharacterBody2D
+
+@export var bullet_scene: PackedScene
+var speed: float = 400.0
+var can_shoot: bool = true
+const SHOOT_COOLDOWN: float = 0.2
+
+func _physics_process(delta: float) -> void:
+	# Input.get_vector(left, right, up, down)
+	var dir := Input.get_vector("mover_esquerda", "mover_direita", "mover_cima", "mover_baixo")
+	velocity = dir * speed
+	move_and_slide()
+
+func _input(event):
+	if event.is_action_pressed("shoot") and can_shoot:
+		if bullet_scene:
+			var bullet = bullet_scene.instantiate()
+			# Adiciona o tiro à cena do jogo, ou seja, a mesma cena do Player
+			get_parent().add_child(bullet)
+			
+			# Posiciona o tiro em relação ao jogador depois de adicioná-lo
+			bullet.global_position = global_position + Vector2(0, -20)
+			
+			# Inicia o cooldown
+			can_shoot = false
+			await get_tree().create_timer(SHOOT_COOLDOWN).timeout
+			can_shoot = true
+		else:
+			push_warning("bullet_scene não está atribuída no Inspector do Player.")
+
+</code></pre>
+                    </div>
+                    <p class="small mt-3">No Inspector do Player (na cena principal), arraste a cena <code>Bullet.tscn</code> para o campo <code>bullet_scene</code>.</p>
+                </div>
+            </section>
+
+            <section id="tab-content-4" class="content-section">
+                <div class="prose max-w-none">
+                    <h2 class="text-2xl font-semibold text-sky-700 mb-4">Passo 4 — Lógica do Jogo e Colisões</h2>
+                    <p class="mb-4">Agora vamos criar a cena principal que vai gerar alvos, atualizar o placar e conectar sinais.</p>
+
+                    <h3 class="text-xl font-medium mb-2">a) Criando a cena principal</h3>
+                    <ol class="list-decimal list-inside small">
+                        <li>Nova cena 2D → nó raiz: <strong>Node2D</strong>. Salve como <code>main_game.tscn</code>.</li>
+                        <li>Filhos:
+                            <ul class="list-disc list-inside ml-6">
+                                <li><strong>Player</strong> (instancie a Player.tscn).</li>
+                                <li><strong>Label</strong> chamado <code>ScoreLabel</code> (canto superior esquerdo).</li>
+                                <li><strong>Timer</strong> chamado <code>TargetTimer</code> — <em>Wait Time</em> = 1.0 e <em>Autostart</em> = true.</li>
+                            </ul>
+                        </li>
+                        <li>No Inspector do nó principal, exporte a variável <code>PackedScene</code> e arraste <code>Target.tscn</code> para ela.</li>
+                    </ol>
+                    <h4 class="text-lg font-medium mt-4 mb-2">Código Principal</h4>
+                    <p class="small">Este script instancia alvos, conecta sinais <em>hit</em> emitidos pelos alvos e atualiza o placar.</p>
+                    <div class="code-block">
+                        <button class="copy-btn">Copiar</button>
+                        <pre class="code"><code># Main.gd
+extends Node2D
+
+@export var target_scene: PackedScene
+@onready var score_label: Label = $ScoreLabel
+@onready var player: CharacterBody2D = $Player
+
+var score: int = 0
+var rng := RandomNumberGenerator.new()
+
+func _ready() -> void:
+    rng.randomize()
+    score_label.text = "Pontos: 0"
+
+# Nome da função ligada ao Timer (conecte o sinal timeout do TargetTimer)
+func _on_TargetTimer_timeout() -> void:
+    if not target_scene:
+        push_warning("target_scene não atribuída no Inspector do Main.")
+        return
+    var t := target_scene.instantiate()
+    add_child(t)
+    # Posiciona o alvo em x aleatório e acima da tela (entra descendo)
+    t.global_position = Vector2(rng.randi_range(50, 1100), -50)
+    # Conecta o sinal custom 'hit' do alvo ao método abaixo
+    t.hit.connect(_on_target_hit)
+
+func _on_target_hit() -> void:
+    # Chamado quando algum alvo emite 'hit'
+    score += 10
+    score_label.text = "Pontos: %d" % score
+</code></pre>
+                    </div>
+                    <p class="note small mt-4"><strong>Importante:</strong> Para que o jogo funcione, você precisa **conectar o sinal `timeout()`** do nó `TargetTimer` ao método `_on_TargetTimer_timeout` no editor(script).</p>
+                    <div class="image-container">
+                        <video src="passo4a.mp4" controls class="rounded-lg shadow-md my-4 w-full"></video>
+                    </div>
+
+                    <h3 class="text-xl font-medium mt-4 mb-2">b) Fluxo de colisão resumido</h3>
+                    <ol class="list-decimal list-inside small">
+                        <li>Player instancia Bullet (Player.gd).</li>
+                        <li>Bullet sobe e detecta o Target via <code>area_entered</code>.</li>
+                        <li>Ao acertar, Target emite sinal <code>hit</code> e se remove com <code>queue_free()</code>.</li>
+                        <li>Bullet também se remove com <code>queue_free()</code> ao detectar o alvo.</li>
+                        <li>Main escuta <code>hit</code> e soma os pontos.</li>
+                    </ol>
+
+                    <p class="note small">Depuração rápida: se o pontuador não aumentar, verifique (1) se o alvo está no grupo <code>targets</code>, (2) se o tiro está no grupo <code>bullets</code>, e (3) se você conectou o Timer e os sinais corretamente.</p>
+                </div>
+            </section>
+
+            <section id="tab-content-5" class="content-section">
+                <div class="prose max-w-none">
+                    <h2 class="text-2xl font-semibold text-sky-700 mb-4">Passo 5 — Exportar e Dicas Finais</h2>
+
+                    <h3 class="text-xl font-medium mb-2">a) Exportando o jogo</h3>
+                    <ol class="list-decimal list-inside small">
+                        <li>Vá em <strong>Projeto > Exportar...</strong>.</li>
+                        <li>Adicione um preset (ex.: <em>Windows Desktop</em> ou <em>Linux/X11</em>).</li>
+                        <li>Se necessário, clique em <strong>Manage Export Templates</strong> para baixar os templates.</li>
+                        <li>Defina ícone, arquivos adicionais, e clique em <strong>Export Project</strong>.</li>
+                    </ol>
+                    <div class="image-container">
+                        <video src="passo5a.mp4" controls class="rounded-lg shadow-md my-4 w-full"></video>
+                    </div>
+
+                    <h3 class="text-xl font-medium mb-2">b) Melhores práticas & ideias de evolução</h3>
+                    <p class="small mb-2">Após terminar o tutorial, você pode evoluir seu jogo com estas ideias:</p>
+                    <ul class="list-disc list-inside small mb-4">
+                        <li>Pool de balas (object pooling) para melhorar a performance se houver muitos tiros.</li>
+                        <li>Sons: adicione efeitos (disparo, acerto) usando <code>AudioStreamPlayer2D</code>.</li>
+                        <li>Vidas/tempo: adicione um HUD com vidas, tempo restante ou níveis incrementais.</li>
+                        <li>Substitua <code>ColorRect</code> por <code>Sprite2D</code> quando precisar de mais controle visual (animações, rotações, etc.).</li>
+                    </ul>
+
+                    <h3 class="text-xl font-medium mb-2">c) Checklist final para rodar o jogo</h3>
+                    <ul class="list-disc list-inside small">
+                        <li>Player com <code>bullet_scene</code> atribuído.</li>
+                        <li>Target e Bullet adicionados a seus grupos (<code>targets</code>, <code>bullets</code>).</li>
+                        <li>CollisionShape2D configurados corretamente.</li>
+                        <li>TargetTimer autostart ativo e conectado ao Main.</li>
+                        <li>ScoreLabel vinculado a <code>$ScoreLabel</code> no Main.</li>
+                    </ul>
+                </div>
+            </section>
+
+        </main>
+
+        <div class="w-full h-4 mt-8" style="background-color:#FF6600"></div>
+    </div>
+
+    <div id="image-zoom-overlay" class="image-zoom-overlay">
+        <img id="image-zoom-display" src="" alt="Imagem ampliada">
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const contentSections = document.querySelectorAll('.content-section');
+            const copyButtons = document.querySelectorAll('.copy-btn');
+            const zoomOverlay = document.getElementById('image-zoom-overlay');
+            const zoomImage = document.getElementById('image-zoom-display');
+
+            function showStep(step){
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                const activeButton = document.querySelector(`[data-tab="${step}"]`);
+                if(activeButton) activeButton.classList.add('active');
+
+                contentSections.forEach(s => s.classList.remove('active'));
+                const activeSection = document.getElementById(`tab-content-${step}`);
+                if(activeSection) activeSection.classList.add('active');
+                
+                document.querySelector('main').scrollTo(0, 0);
+            }
+
+            tabButtons.forEach(btn => {
+                btn.addEventListener('click', () => showStep(btn.dataset.tab));
+            });
+
+            const totalSteps = 5;
+            let currentStep = 1;
+            const nextButton = document.createElement('button');
+            nextButton.textContent = 'Próximo Passo >>';
+            nextButton.className = 'px-4 py-2 mt-4 rounded-md bg-[#003463] text-white shadow-sm hover:bg-[#014c8d] transition-colors';
+            const prevButton = document.createElement('button');
+            prevButton.textContent = '<< Passo Anterior';
+            prevButton.className = 'px-4 py-2 mt-4 rounded-md bg-stone-200 text-stone-800 shadow-sm hover:bg-stone-300 transition-colors mr-2';
+
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'flex justify-between mt-6';
+            buttonContainer.appendChild(prevButton);
+            buttonContainer.appendChild(nextButton);
+            document.querySelector('main').appendChild(buttonContainer);
+
+            nextButton.addEventListener('click', ()=>{
+                if(currentStep < totalSteps) {
+                    currentStep++;
+                    showStep(currentStep);
+                }
+            });
+            prevButton.addEventListener('click', ()=>{
+                if(currentStep > 1) {
+                    currentStep--;
+                    showStep(currentStep);
+                }
+            });
+
+            showStep(1);
+
+            copyButtons.forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const pre = btn.nextElementSibling;
+                    if(!pre) return;
+                    const code = pre.innerText;
+                    try {
+                        await navigator.clipboard.writeText(code);
+                        const old = btn.innerText;
+                        btn.innerText = 'Copiado!';
+                        setTimeout(()=> btn.innerText = old, 1800);
+                    } catch (err) {
+                        console.error('Falha ao copiar:', err);
+                        btn.innerText = 'Erro';
+                        setTimeout(()=> btn.innerText = 'Copiar', 1800);
+                    }
+                });
+            });
+
+            document.querySelectorAll('.image-container img, .image-container video').forEach(el => {
+                el.addEventListener('click', () => {
+                    zoomOverlay.innerHTML = '';
+                    
+                    if(el.tagName.toLowerCase() === 'video'){
+                        const video = document.createElement('video');
+                        video.src = el.src;
+                        video.controls = true;
+                        video.style.maxWidth = '90%';
+                        video.style.maxHeight = '90%';
+                        zoomOverlay.appendChild(video);
+                    } else {
+                        const img = document.createElement('img');
+                        img.src = el.src;
+                        img.alt = el.alt;
+                        img.style.maxWidth = '90%';
+                        img.style.maxHeight = '90%';
+                        img.style.borderRadius = '.5rem';
+                        zoomOverlay.appendChild(img);
+                    }
+                    zoomOverlay.classList.add('visible');
+                });
+            });
+
+            zoomOverlay.addEventListener('click', (e) => {
+                if (e.target === zoomOverlay) {
+                    zoomOverlay.classList.remove('visible');
+                    zoomOverlay.innerHTML = '';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
